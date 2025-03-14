@@ -8,11 +8,10 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var txtDisplay: TextView
-    private var expression = ""  // Chứa toàn bộ phép tính
-    private var firstValue: Double? = null
+    private var currentInput = ""
     private var operator: String? = null
+    private var firstOperand: Double? = null
     private var isNewOperation = true
-    private var lastResult: Double? = null  // Lưu kết quả cuối cùng
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -28,7 +27,6 @@ class MainActivity : AppCompatActivity() {
             R.id.btn5, R.id.btn6, R.id.btn7, R.id.btn8, R.id.btn9
         )
 
-        // Gán sự kiện click cho các nút số
         numberButtons.forEach { id ->
             findViewById<Button>(id).setOnClickListener {
                 val text = (it as Button).text.toString()
@@ -36,7 +34,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Gán sự kiện click cho các phép toán
         findViewById<Button>(R.id.btnAdd).setOnClickListener { onOperatorClick("+") }
         findViewById<Button>(R.id.btnSub).setOnClickListener { onOperatorClick("-") }
         findViewById<Button>(R.id.btnMul).setOnClickListener { onOperatorClick("*") }
@@ -44,67 +41,80 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.btnEqual).setOnClickListener { onEqualClick() }
         findViewById<Button>(R.id.btnClear).setOnClickListener { onClearClick() }
         findViewById<Button>(R.id.btnBack).setOnClickListener { onBackspaceClick() }
+        findViewById<Button>(R.id.btnDot).setOnClickListener { onDotClick() }
+        findViewById<Button>(R.id.btnNegate).setOnClickListener { onNegateClick() }
     }
 
     private fun onNumberClick(value: String) {
         if (isNewOperation) {
-            expression = value
+            currentInput = value
             isNewOperation = false
         } else {
-            expression += value
+            currentInput += value
         }
-        txtDisplay.text = expression
+        txtDisplay.text = currentInput
     }
 
     private fun onOperatorClick(op: String) {
-        if (expression.isNotEmpty() && operator == null) {
-            firstValue = expression.toDoubleOrNull()
+        if (currentInput.isNotEmpty() && firstOperand == null) {
+            firstOperand = currentInput.toDouble()
             operator = op
-            expression += " $op "
-            txtDisplay.text = expression
-            isNewOperation = false
+            currentInput = ""
+            txtDisplay.text = "$firstOperand $operator"
         }
     }
 
     private fun onEqualClick() {
-        val parts = expression.split(" ")
-        if (parts.size == 3) {
-            val firstValue = parts[0].toDoubleOrNull()
-            val secondValue = parts[2].toDoubleOrNull()
-            val operator = parts[1]
-
-            if (firstValue != null && secondValue != null) {
-                val result = when (operator) {
-                    "+" -> firstValue + secondValue
-                    "-" -> firstValue - secondValue
-                    "*" -> firstValue * secondValue
-                    "/" -> if (secondValue != 0.0) firstValue / secondValue else "Error"
-                    else -> "Error"
-                }
-
-                lastResult = result.toString().toDoubleOrNull()
-                expression += " = $result"
-                txtDisplay.text = expression
-                isNewOperation = true
+        if (firstOperand != null && operator != null && currentInput.isNotEmpty()) {
+            val secondOperand = currentInput.toDouble()
+            val result = when (operator) {
+                "+" -> firstOperand!! + secondOperand
+                "-" -> firstOperand!! - secondOperand
+                "*" -> firstOperand!! * secondOperand
+                "/" -> if (secondOperand != 0.0) firstOperand!! / secondOperand else "Error"
+                else -> "Error"
             }
+            txtDisplay.text = result.toString()
+            currentInput = result.toString()
+            firstOperand = null
+            operator = null
+            isNewOperation = true
         }
     }
 
     private fun onClearClick() {
-        expression = "0"
-        txtDisplay.text = expression
-        firstValue = null
+        currentInput = "0"
+        txtDisplay.text = currentInput
+        firstOperand = null
         operator = null
         isNewOperation = true
     }
 
     private fun onBackspaceClick() {
-        if (expression.isNotEmpty()) {
-            expression = expression.dropLast(1)
+        if (currentInput.isNotEmpty()) {
+            currentInput = currentInput.dropLast(1)
         }
-        if (expression.isEmpty()) {
-            expression = "0"
+        if (currentInput.isEmpty()) {
+            currentInput = "0"
         }
-        txtDisplay.text = expression
+        txtDisplay.text = currentInput
+    }
+
+    private fun onDotClick() {
+        if (!currentInput.contains(".")) {
+            currentInput += "."
+            txtDisplay.text = currentInput
+        }
+    }
+
+    private fun onNegateClick() {
+        if (currentInput.isNotEmpty() && currentInput != "0") {
+            currentInput = if (currentInput.startsWith("-")) {
+                currentInput.substring(1)
+            } else {
+                "-$currentInput"
+            }
+            txtDisplay.text = currentInput
+        }
     }
 }
